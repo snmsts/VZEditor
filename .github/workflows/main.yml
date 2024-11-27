@@ -1,0 +1,55 @@
+on: 
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: 'ubuntu-22.04'
+
+    steps:
+    - name: 'Git checkout'
+      uses: actions/checkout@v4
+
+    - name: 'Install dosbox-x (apt)'
+      run: sudo snap install dosbox-x
+
+    - name: 'Make build dir'
+      run: |
+        mkdir build
+
+    - name: 'Compile'
+      uses: 'joncloud/dos-build-action@main'
+      timeout-minutes: 5
+      with:
+        programs: |
+          $/turbo-asm/2.01:c:\tasm
+          $/turbo-c++/3.00:c:\tc
+          SRC:c:\src
+          build:c:\build
+        run: |
+          set ASM=t
+          set LNK=t
+          mk 98
+          mk j31
+          mk ibm
+          mk ibmj
+          mk ax
+          mk 55
+          mk us
+        conf: |
+          [dosbox]
+          memsize=256
+
+          [cpu]
+          cycles=max
+          turbo=true
+
+    - name: 'Prepare Results'
+      if: always()
+      run: |
+        cp SRC/*.COM build
+
+    - uses: 'actions/upload-artifact@v3'
+      with:
+        name: 'build-dos'
+        path: build
